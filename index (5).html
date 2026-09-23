@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mensas Centre</title>
+<!-- Ersatzschrift, falls DIN Next nicht vorhanden ist -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* DIN Next: Schriftdateien in den Ordner "fonts" legen (Dateinamen ggf. anpassen). */
+  @font-face { font-family: "DIN Next ETH"; font-weight: 300;
+    src: local("DIN Next LT Pro Light"), url("fonts/DINNextLTPro-Light.woff2") format("woff2"), url("fonts/DINNextLTPro-Light.otf"); }
+  @font-face { font-family: "DIN Next ETH"; font-weight: 400;
+    src: local("DIN Next LT Pro"), url("fonts/DINNextLTPro-Regular.woff2") format("woff2"), url("fonts/DINNextLTPro-Regular.otf"); }
+  @font-face { font-family: "DIN Next ETH"; font-weight: 500;
+    src: local("DIN Next LT Pro Medium"), url("fonts/DINNextLTPro-Medium.woff2") format("woff2"), url("fonts/DINNextLTPro-Medium.otf"); }
+  @font-face { font-family: "DIN Next ETH"; font-weight: 700;
+    src: local("DIN Next LT Pro Bold"), url("fonts/DINNextLTPro-Bold.woff2") format("woff2"), url("fonts/DINNextLTPro-Bold.otf"); }
+
+  :root {
+    --ink: #1f1f1f;
+    --grey: #6f6f6f;
+    --light: #8c8c8c;
+    --rule: #d6d6d6;
+    --border: #b9b9b9;
+    --closed: #575757;
+    --pill: #f1f1f1;
+    --green: #1f9d3a;
+    --vegan: #3aa935;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(100vw / 120); }            /* 16px bei 1920 px Breite */
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; color: var(--ink);
+    font-family: "DIN Next ETH", "DIN Next LT Pro", "Barlow", "Segoe UI", Arial, sans-serif; }
+
+  #board { height: 100%; padding: 1.4rem; display: grid; gap: 1.4rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+
+  /* Titelfeld */
+  .intro { padding: 1.9rem 1.9rem 1.6rem; display: flex; flex-direction: column; border: 1px solid var(--border); }
+  .intro h1 { font-weight: 400; font-size: 2.6rem; line-height: 1.1; margin: 0; }
+  .intro .sub { color: var(--grey); font-size: 1.1rem; margin-top: .4rem; }
+  .intro .date { font-weight: 700; font-size: 1.3rem; margin-top: 1.6rem; }
+  .intro .clock { font-weight: 300; font-size: 4.2rem; line-height: 1; margin-top: .4rem; font-variant-numeric: tabular-nums; }
+  .intro .legend { margin-top: auto; font-size: 1rem; color: var(--grey); line-height: 1.9; }
+  .intro .legend svg { vertical-align: -.25rem; margin-right: .4rem; }
+  .intro .stamp { font-size: .85rem; color: var(--light); margin-top: .5rem; }
+
+  /* Mensa-Karten im ETH-Stil */
+  .mensa { border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .mensa .head { padding: 1.6rem 1.9rem 0; }
+  .mensa .top { display: flex; align-items: flex-start; gap: .8rem; }
+  .mensa h2 { font-weight: 400; font-size: 1.75rem; line-height: 1.15; margin: 0; flex: 1; }
+  .mensa .campus { color: var(--grey); font-size: .95rem; margin-top: .3rem; }
+  .mensa .dayrow { display: flex; align-items: center; margin: 1.1rem 0 .4rem; }
+  .mensa .day { font-weight: 700; font-size: 1.1rem; flex: 1; }
+  .dots { display: flex; gap: .4rem; }
+  .dots i { width: .5rem; height: .5rem; border-radius: 50%; background: var(--rule); transition: background .6s; }
+  .dots i.on { background: var(--ink); }
+
+  .pill { flex: none; display: inline-flex; align-items: center; gap: .45rem; border-radius: 99rem;
+    padding: .3rem .8rem; font-size: .82rem; font-weight: 700; white-space: nowrap; margin-top: .15rem; }
+  .pill.closed { background: var(--closed); color: #fff; }
+  .pill.open, .pill.soon { background: var(--pill); color: var(--ink); }
+  .pill.soon .dot { background: #e59a17; box-shadow: 0 0 0 .18rem #f7e2bb; }
+  .pill .dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 0 .18rem #c9ebd0; }
+
+  .viewport { flex: 1; overflow: hidden; position: relative; }
+  .page { position: absolute; inset: 0; padding: 0 1.9rem; opacity: 0; transition: opacity .9s ease; }
+  .page.on { opacity: 1; }
+  .measure { padding: 0 1.9rem; visibility: hidden; }
+  .dish { display: flex; gap: 1.4rem; padding: 1.05rem 0; border-top: 1px solid var(--rule); }
+  .dish:first-child { border-top: 0; }
+  .dish .img { flex: none; width: 5.6rem; height: 5.6rem; background: #e9e9e9; overflow: hidden; }
+  .dish .img img, .dish .img svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dish .txt { min-width: 0; }
+  .dish .station { font-size: .78rem; font-weight: 700; color: var(--grey); letter-spacing: .02em; text-transform: uppercase; }
+  .dish .name { font-size: 1.15rem; line-height: 1.3; margin: .3rem 0 .35rem; }
+  .dish .name svg { vertical-align: -.2rem; margin-left: .35rem; }
+  .dish .plabel { font-size: .8rem; color: var(--light); }
+  .dish .price { font-size: .98rem; font-weight: 700; margin-top: .3rem; }
+  .dish.soldout { opacity: .4; }
+
+  .note { padding: 1rem 0; color: var(--grey); font-size: 1.05rem; }
+</style>
+</head>
+<body>
+<main id="board"></main>
+
+<script>
+// ============================ EINSTELLUNGEN ============================
+const CONFIG = {
+  // ETH-Facility-IDs der 7 Mensas im Zentrum (Reihenfolge wie auf ethz.ch)
+  mensas: [
+    { id: 8,  name: "Archimedes" },
+    { id: 3,  name: "Clausiusbar" },
+    { id: 5,  name: "Dozentenfoyer" },
+    { id: 7,  name: "food&lab" },
+    { id: 9,  name: "Mensa Polyterrasse" },
+    { id: 10, name: "Polysnack" },
+    { id: 11, name: "Tannenbar" },
+  ],
+  campus: "Main Campus (Centre)",
+  lang: "en",
+  refreshMinutes: 10,   // Menüs alle x Minuten neu laden
+  pageSeconds: 10,      // Mensas mit mehr Gerichten blättern alle gleichzeitig um
+  skip: /dessert/i,     // Linien/Gerichte, die weggelassen werden
+};
+// ======================================================================
+
+const API = "https://idapps.ethz.ch/cookpit-pub-services/v1/";
+const CLIENT = "ethz-wcms";
+const DEMO = new URLSearchParams(location.search).get("demo") === "1";
+let lastResults = [];
+
+// ---------- Zeit (immer Zürcher Zeit) ----------
+function zurichNow() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich", hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date());
+  const g = t => parts.find(p => p.type === t).value;
+  const iso = `${g("year")}-${g("month")}-${g("day")}`;
+  const d = new Date(iso + "T12:00:00Z");
+  return {
+    iso,
+    next: new Date(d.getTime() + 86400000).toISOString().slice(0, 10),
+    weekday: ((d.getUTCDay() + 6) % 7) + 1,           // Mo=1 … So=7
+    hm: `${g("hour")}:${g("minute")}`,
+    date: d,
+  };
+}
+const dayName = d => d.toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" });
+
+// ---------- Daten laden ----------
+async function fetchMensa(m, now) {
+  const url = `${API}weeklyrotas?client-id=${CLIENT}&lang=${CONFIG.lang}&rs-first=0&rs-size=50` +
+    `&valid-after=${now.iso}&valid-before=${now.next}&facility=${m.id}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  for (const rota of data["weekly-rota-array"] || []) {
+    if (now.iso < rota["valid-from"] || now.iso > rota["valid-to"]) continue;
+    const day = (rota["day-of-week-array"] || []).find(d => d["day-of-week-code"] === now.weekday);
+    if (day) return day;
+  }
+  return null;
+}
+
+// ---------- Hilfsfunktionen ----------
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+function svg(markup) {
+  const t = document.createElement("template");
+  t.innerHTML = markup.trim();
+  return t.content.firstChild;
+}
+const ICON_VEGAN = `<svg width="20" height="22" viewBox="0 0 20 22"><path d="M2 3 L9 20 L17 2" fill="none" stroke="#3aa935" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 5 C14 1 18 0 19 1 C19 4 17 6 13 5 Z" fill="#3aa935"/></svg>`;
+const ICON_VEGI = `<svg width="20" height="22" viewBox="0 0 20 22"><path d="M2 3 L9 20 L17 2" fill="none" stroke="#9aa12b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const PLATE = `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#e9e9e9"/><circle cx="51" cy="50" r="28" fill="none" stroke="#bdbdbd" stroke-width="6"/><circle cx="51" cy="50" r="17" fill="none" stroke="#bdbdbd" stroke-width="3"/><path d="M13 22 v18 M9 22 v12 q0 6 4 6 q4 0 4 -6 v-12 M13 40 v38" stroke="#bdbdbd" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M88 22 q-6 8 -6 22 h6 v34" stroke="#bdbdbd" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>`;
+
+function dietIcon(meal) {
+  const c = (meal["meal-class-array"] || []).map(x => x["desc-short"]);
+  if (c.includes("Vegan")) return svg(ICON_VEGAN);
+  if (c.some(x => /vegetari/i.test(x))) return svg(ICON_VEGI);
+  return null;
+}
+function priceText(meal) {
+  const p = [...(meal["meal-price-array"] || [])]
+    .sort((a, b) => a["customer-group-position"] - b["customer-group-position"]);
+  if (!p.length) return "";
+  const vals = p.map(x => Number(x.price).toFixed(2));
+  if (vals.every(v => v === vals[0])) return "All " + vals[0];
+  return p.map((x, i) => `${x["customer-group-desc-short"]} ${vals[i]}`).join(" / ");
+}
+
+// Offen oder geschlossen, anhand der Öffnungszeiten des Tages
+function status(day, hm) {
+  let nextOpen = null;
+  for (const oh of (day && day["opening-hour-array"]) || []) {
+    const from = (oh["time-from"] || "").slice(0, 5), to = (oh["time-to"] || "").slice(0, 5);
+    if (!from || !to) continue;
+    if (hm >= from && hm < to) return { state: "open", until: to };
+    if (hm < from && (!nextOpen || from < nextOpen)) nextOpen = from;
+  }
+  return nextOpen ? { state: "soon", at: nextOpen } : { state: "closed" };
+}
+function pill(st) {
+  if (st.state === "open" || st.state === "soon") {
+    const p = el("span", "pill " + st.state);
+    p.append(el("span", "dot"), document.createTextNode(
+      st.state === "open" ? "Open until " + st.until : "Opens at " + st.at));
+    return p;
+  }
+  const p = el("span", "pill closed");
+  p.append(svg(`<svg width="13" height="13" viewBox="0 0 24 24"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>`),
+    document.createTextNode("Closed"));
+  return p;
+}
+
+// ---------- Darstellung ----------
+function renderMensa(m, day, failed, now) {
+  const card = el("section", "mensa");
+  card.dataset.id = m.id;
+  const head = el("div", "head");
+  const top = el("div", "top");
+  top.append(el("h2", null, m.name), pill(status(day, now.hm)));
+  const dayrow = el("div", "dayrow");
+  dayrow.append(el("div", "day", "Menu on " + dayName(now.date)), el("div", "dots"));
+  head.append(top, el("div", "campus", CONFIG.campus), dayrow);
+  card.append(head);
+
+  const vp = el("div", "viewport"), list = el("div", "measure");
+  vp.append(list); card.append(vp);
+
+  if (failed) { list.append(el("div", "note", "Menu could not be loaded.")); return card; }
+
+  const lines = [];
+  for (const oh of (day && day["opening-hour-array"]) || [])
+    for (const mt of oh["meal-time-array"] || []) {
+      if (/abend|dinner/i.test(mt.name || "")) continue;       // nur Mittagessen
+      for (const line of mt["line-array"] || []) {
+        if (!line.meal) continue;
+        const classes = (line.meal["meal-class-array"] || []).map(c => c["desc-short"]).join(" ");
+        if (CONFIG.skip.test(`${line.name || ""} ${line.meal.name || ""} ${classes}`)) continue;
+        lines.push(line);
+      }
+    }
+  if (!lines.length) { list.append(el("div", "note", "No menu today.")); return card; }
+
+  for (const line of lines) {
+    const meal = line.meal;
+    const sold = /^(ausverkauft|sold out)$/i.test((meal.name || "").trim());
+    const d = el("div", "dish" + (sold ? " soldout" : ""));
+
+    const imgBox = el("div", "img");
+    if (meal["image-url"] && !DEMO) {
+      const img = new Image();
+      img.alt = "";
+      img.src = meal["image-url"] + "?client-id=" + CLIENT;
+      img.onerror = () => { imgBox.innerHTML = PLATE; };
+      imgBox.append(img);
+    } else imgBox.innerHTML = PLATE;
+
+    const txt = el("div", "txt");
+    if (line.name) txt.append(el("div", "station", line.name));
+    const name = el("div", "name", meal.name || "");
+    const icon = dietIcon(meal); if (icon) name.append(icon);
+    txt.append(name);
+    const pr = priceText(meal);
+    if (pr) txt.append(el("div", "plabel", "Price (CHF)"), el("div", "price", pr));
+
+    d.append(imgBox, txt);
+    list.append(d);
+  }
+  return card;
+}
+
+function renderIntro(now) {
+  const box = el("section", "intro");
+  box.append(el("h1", null, "Lunch"), el("div", "sub", CONFIG.campus));
+  box.append(el("div", "date", now.date.toLocaleDateString("en-GB",
+    { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })));
+  const clock = el("div", "clock", now.hm); clock.id = "clock"; box.append(clock);
+  const legend = el("div", "legend");
+  const a = el("div"); a.append(svg(ICON_VEGAN), document.createTextNode("vegan"));
+  const b = el("div"); b.append(svg(ICON_VEGI), document.createTextNode("vegetarian"));
+  legend.append(a, b);
+  box.append(legend);
+  return box;
+}
+
+// Uhr und Offen/Geschlossen jede Minute aktualisieren, ohne neu zu laden
+function updateLive() {
+  const now = zurichNow();
+  const c = document.getElementById("clock"); if (c) c.textContent = now.hm;
+  for (const r of lastResults) {
+    const card = document.querySelector(`.mensa[data-id="${r.m.id}"]`);
+    if (!card) continue;
+    const old = card.querySelector(".pill");
+    old.replaceWith(pill(status(r.day, now.hm)));
+  }
+}
+setInterval(updateLive, 20000);
+
+// ---------- Synchrones Blättern ----------
+// Gerichte werden in Seiten aufgeteilt, die ganz in die Karte passen.
+// Alle Mensas mit mehreren Seiten blättern gleichzeitig um (Überblendung).
+let pagers = [], step = 0;
+function paginate() {
+  pagers = [];
+  for (const card of document.querySelectorAll(".mensa")) {
+    const vp = card.querySelector(".viewport"), measure = vp.querySelector(".measure");
+    if (!measure) continue;
+    const avail = vp.clientHeight - 8;
+    const items = [...measure.children];
+    const pages = [[]]; let used = 0;
+    for (const it of items) {
+      const h = it.offsetHeight;
+      if (used + h > avail && pages[pages.length - 1].length) { pages.push([]); used = 0; }
+      pages[pages.length - 1].push(it); used += h;
+    }
+    measure.remove();
+    const pageEls = pages.map((grp, i) => {
+      const pg = el("div", "page" + (i === 0 ? " on" : ""));
+      grp.forEach(it => pg.append(it));
+      vp.append(pg);
+      return pg;
+    });
+    const dots = card.querySelector(".dots");
+    dots.innerHTML = "";
+    if (pageEls.length > 1) pageEls.forEach((_, i) => dots.append(el("i", i === 0 ? "on" : "")));
+    pagers.push({ pageEls, dots: [...dots.children] });
+  }
+  showStep();
+}
+function showStep() {
+  for (const p of pagers) {
+    const i = step % p.pageEls.length;
+    p.pageEls.forEach((pg, k) => pg.classList.toggle("on", k === i));
+    p.dots.forEach((d, k) => d.classList.toggle("on", k === i));
+  }
+}
+setInterval(() => { step++; showStep(); }, CONFIG.pageSeconds * 1000);
+
+// ---------- Laden & Anzeigen ----------
+async function load() {
+  const now = zurichNow();
+  const results = DEMO
+    ? CONFIG.mensas.map(m => ({ m, day: demoDay(m), failed: false }))
+    : await Promise.all(CONFIG.mensas.map(async m => {
+        try { return { m, day: await fetchMensa(m, now), failed: false }; }
+        catch (e) { return { m, day: null, failed: true }; }
+      }));
+
+  // Bei Netzwerkausfall das Bisherige stehen lassen
+  if (results.every(r => r.failed) && lastResults.length) return;
+  lastResults = results;
+
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  board.append(renderIntro(now));
+  for (const r of results) board.append(renderMensa(r.m, r.day, r.failed, now));
+  step = 0;
+  await (document.fonts ? document.fonts.ready : Promise.resolve());
+  paginate();
+}
+load();
+setInterval(load, CONFIG.refreshMinutes * 60 * 1000);
+
+// ---------- Testdaten: index.html?demo=1 ----------
+function demoDay(m) {
+  const dish = (station, name, cls, p, all) => ({ name: station, meal: { name,
+    "meal-class-array": cls ? [{ "desc-short": cls }] : [],
+    "meal-price-array": (all ? [["Alle", p]] : [["Stud.", p], ["Int.", p + 3], ["Ext.", p + 6]])
+      .map(([g, v], i) => ({ "customer-group-desc-short": g, "customer-group-position": i, price: v })) } });
+  const pool = [dish("The Gardener", "Schwarzpfeffer Tofu", "Vegan", 7.9),
+    dish("The Chef", "Kalbsbratwurst", null, 8.9), dish("The Expert", "Tonkatsu Bowl", null, 11.5),
+    dish("Wok Green", "Qinghai", "Vegetarisch", 12.9), dish("Chefs World", "Trüffel Raviolini mit Rindsstreifen", null, 21, true),
+    dish("Delight", "Pad Thai Gai", null, 9.2), dish("Dessert", "Schokoladenmousse", null, 3.5)];
+  const hours = { 8: ["00:00", "00:01"], 5: ["23:58", "23:59"] }[m.id] || ["00:00", "23:59"];
+  const open = [{ "time-from": hours[0], "time-to": hours[1] }];
+  open[0]["meal-time-array"] = [{ name: "Mittagessen", "line-array": m.id === 9 ? pool : m.id === 3 ? pool.slice(0, 5) : pool.slice(0, 3) }];
+  return { "opening-hour-array": open };
+}
+</script>
+</body>
+</html>
